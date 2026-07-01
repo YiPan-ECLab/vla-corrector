@@ -676,6 +676,13 @@ class EvalModifiedDetectionConfig:
     def __post_init__(self) -> None:
         policy_path = parser.get_path_arg("policy")
         if policy_path:
+            policy_path_obj = Path(policy_path)
+            if (policy_path_obj.is_absolute() or str(policy_path).startswith(("./", "../"))) and not policy_path_obj.exists():
+                raise FileNotFoundError(
+                    f"Policy checkpoint path does not exist: {policy_path}. "
+                    "Fine-tuned checkpoints are not included in this repository; "
+                    "please provide a valid local checkpoint directory or a Hugging Face model id."
+                )
             cli_overrides = parser.get_cli_overrides("policy")
             self.policy = PreTrainedConfig.from_pretrained(policy_path, cli_overrides=cli_overrides)
             self.policy.pretrained_path = Path(policy_path)
@@ -693,6 +700,15 @@ class EvalModifiedDetectionConfig:
         if not self.safety_model_path:
             raise ValueError(
                 "Missing safety model path. Please set --safety_model_path=/path/to/your/model_dir_or_parent_dir."
+            )
+        safety_path_obj = Path(self.safety_model_path)
+        if (
+            safety_path_obj.is_absolute() or str(self.safety_model_path).startswith(("./", "../"))
+        ) and not safety_path_obj.exists():
+            raise FileNotFoundError(
+                f"Safety model path does not exist: {self.safety_model_path}. "
+                "Safety predictor checkpoints are not included in this repository; "
+                "please provide your trained safety checkpoint directory."
             )
 
     @classmethod

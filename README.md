@@ -30,6 +30,12 @@ conda activate lerobot
 python -m pip install -e . --no-build-isolation
 ```
 
+For PushT simulation training/evaluation smoke tests, install the simulation extra:
+
+```bash
+python -m pip install -e '.[pusht]' --no-build-isolation
+```
+
 Alternatively:
 
 ```bash
@@ -205,11 +211,46 @@ The original LeRobot policy training entry point is also retained:
 python -m lerobot.scripts.lerobot_train --help
 ```
 
+Minimal PushT smoke training with a local LeRobot-format dataset:
+
+```bash
+python -m lerobot.scripts.lerobot_train \
+  --dataset.repo_id=<LOCAL_REPO_ID> \
+  --dataset.root=<LOCAL_LEROBOT_DATASET_DIR> \
+  --policy.type=act \
+  --policy.device=cpu \
+  --policy.push_to_hub=false \
+  --policy.chunk_size=1 \
+  --policy.n_action_steps=1 \
+  --batch_size=2 \
+  --steps=1 \
+  --eval_freq=0 \
+  --save_freq=1 \
+  --num_workers=0 \
+  --output_dir=outputs/train/pusht_smoke
+```
+
+Minimal PushT smoke evaluation from a local policy checkpoint:
+
+```bash
+python -m lerobot.scripts.lerobot_eval \
+  --policy.path=outputs/train/pusht_smoke/checkpoints/000001/pretrained_model \
+  --policy.device=cpu \
+  --env.type=pusht \
+  --env.obs_type=environment_state_agent_pos \
+  --env.episode_length=1 \
+  --eval.batch_size=1 \
+  --eval.n_episodes=1 \
+  --eval.use_async_envs=false \
+  --output_dir=outputs/eval/pusht_smoke
+```
+
 ## Notes
 
 - `eval.batch_size` must be `1` for `lerobot_eval_modified_detection`.
 - `safety_history_frames` currently supports `1`.
 - `policy.n_action_steps` must be positive and no larger than `policy.chunk_size`.
+- PushT simulation evaluation requires the `pusht` extra: `python -m pip install -e '.[pusht]' --no-build-isolation`.
 - Default generated files should go under `outputs/`, which is ignored by git.
 - Full evaluation requires the target simulator dependencies, GPU resources, datasets, policy checkpoints, and safety predictor checkpoints.
 - If an evaluation fails because a dataset, pretrained model, or fine-tuned checkpoint is missing, prepare that artifact locally and rerun with the corresponding argument.
